@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <link rel="stylesheet" href="../static/music/lib/materialize/css/materialize.min.css" th:href="@{/music/lib/materialize/css/materialize.min.css}">
+    <link rel="stylesheet" href="../static/music/css/font-awesome.min.css" th:href="@{/music/css/font-awesome.min.css}">
+    <link href="../static/music/lib/nouislider/nouislider.css" rel="stylesheet" th:href="@{/music/lib/nouislider/nouislider.css}">
+    <link href="../static/music/css/my.css" rel="stylesheet" th:href="@{/music/css/my.css}">
+    <style type="text/css">
+        * {
+            margin: 0;
+            padding: 0;
+        }
+
+        .box {
+            width: 40px;
+            margin: 0 auto;
+            /*border: 1px solid #ff6700;*/
+            overflow: hidden;
+        }
+
+        .animate {
+            padding-left: 4px;
+            font-size: 12px;
+            color: #000;
+            display: inline-block;
+            white-space: nowrap;
+        }
+
+        .animate2 {
+            padding-left: 3.5em;
+            font-size: 12px;
+            color: #000;
+            display: inline-block;
+            white-space: nowrap;
+        }
+
+        .animate3 {
+            padding-left: 20px;
+            font-size: 12px;
+            color: #000;
+            display: inline-block;
+            white-space: nowrap;
+            animation: 5s wordsLoop linear infinite normal;
+        }
+
+        @keyframes wordsLoop {
+            0% {
+                transform: translateX(100px);
+                -webkit-transform: translateX(100px);
+            }
+            100% {
+                transform: translateX(-100%);
+                -webkit-transform: translateX(-100%);
+            }
+        }
+
+        @-webkit-keyframes wordsLoop {
+            0% {
+                transform: translateX(100px);
+                -webkit-transform: translateX(100px);
+            }
+            100% {
+                transform: translateX(-100%);
+                -webkit-transform: translateX(-100%);
+            }
+        }
+    </style>
+</head>
+<body style="background-color: #7abaff">
+<script src="../static/music/js/jsmediatags.min.js" charset="utf-8" th:href="@{/music/js/jsmediatags.min.js}"></script>
+<script src="../static/music/js/anime.min.js" th:href="@{/music/js/anime.min.js}"></script>
+<!--chrome浏览器不支持自动播放-->
+<audio type="file" id="audioPlay" class="file-input" src="../static/music/audio/A2AQianShiYouYue.mp3" th:src="@{/music/audio/A2AQianShiYouYue.mp3}"
+       controls="controls" loop autoplay="autoplay" preload="auto" hidden="hidden">
+    您的浏览器不支持audio标签,您还是换个浏览器吧
+</audio>
+
+<div class="container" style="position:fixed; z-index: 999 ;bottom: 0">
+    <div id="musicPlayerSelf" class="container card" style="height: 14em;width: 14em;overflow: hidden;margin: 0">
+        <!--    音乐播放背景-->
+        <img id="playerImg" src="../static/music/lib/loop/img/sample-03.jpg" th:src="@{/music/lib/loop/img/sample-03.jpg}" class="center"
+             style="height: 100%;opacity: 0.7;position: relative;"/>
+        <!--    音乐播放设置-->
+        <a id="musicPlayOrPause" onclick="musicPlay()" class="fa fa-play " aria-hidden="true" style="color: black;position: absolute;
+    top: 4.25em;left: 4em;font-size: 1.5em;cursor: pointer"></a>
+        <!--播放下一首-->
+        <a id="musicNext" onclick="musicNext()" class="fa fa-step-forward" aria-hidden="true"
+           style="cursor:pointer;color: black;position: absolute;top: 4.25em;left: 8em;font-size: 1.5em"></a>
+        <!--    播放上一首-->
+        <a id="musicPre" onclick="musicPre()" class="fa fa-step-backward" aria-hidden="true"
+           style="cursor:pointer;color: black;position: absolute;top: 4.25em;left: 0.5em;font-size: 1.5em"></a>
+        <!--    隐藏音乐播放器-->
+        <a id="musicHide" onclick="clickToOffMusicPlayer()" class="fa fa-chevron-left" aria-hidden="true"
+           style="cursor:pointer;color: black;position: absolute;top: 0.5em;left: 8em;font-size: 1.5em;"></a>
+        <!--单曲循环或列表播放-->
+        <i onclick="musicSingleOrListLoop()" id="musicLoopOrListLoop" class="fa fa-long-arrow-right" aria-hidden="true"
+           style="color: black;position: absolute;font-size: 1.5em;top: 0.5em;
+    left: 0.5em;cursor:pointer;"></i>
+        <!--        歌曲名-->
+        <div id="musicNameContainer" class="center-align" style="position: absolute">
+            <div id="musicName" class="flow-text center-align " style="font-size: 1.5em">这是歌曲名</div>
+        </div>
+        <!--        歌手信息-->
+        <div id="musicAuthorContainer" class="center-align" style="position: absolute">
+            <div id="musicAuthor" class="flow-text center-align">这是歌手信息</div>
+        </div>
+        <!--        歌曲描述-->
+        <div id="musicDescriptionContainer" class="box"
+             style="position: absolute;top: 11em;left: 2em;font-size: 1em;width: 9em">
+            <div id="musicDescription" class="flow-text animate3">这是歌曲描述</div>
+        </div>
+        <!--    显示音乐列表-->
+        <i id="musicListShow" onclick="clickToShowOrHideMusicList()" class="fa fa-ellipsis-h" aria-hidden="true" style="position: absolute;font-size: 1.5em;top: 8em;
+    left: 8em;cursor:pointer;"></i>
+        <!--音量调节bar-->
+        <div id="musicVoiceContainer" style="position: absolute;top: 11.7em;left: 0.5em" onmouseover="iconHover()"
+             onmouseout="iconOut()">
+            <div id="voiceBarBack"
+                 style=" position: absolute;background: #f1f3f4;height: 1.8em; border-radius: 15px; width: 10em;visibility: hidden;">
+                <div id="progressBar" class="center"
+                     style="cursor:pointer;position: absolute;height: 7px;width: 7em;top: 0.7em;left: 2em;"></div>
+            </div>
+            <!--    音量图标标识-->
+            <i id="musicVoiceIcon" onclick="musicVoice()" class="fa fa-volume-up" aria-hidden="true"
+               style="cursor:pointer;position: absolute;font-size: 1.5em;top: 0.1em;left: 0.2em;"></i>
+        </div>
+        <!--        音乐播放进度条显示-->
+        <div id="musicProgressBarContainer" class="progress grey lighten-4"
+             style="position:absolute;top: 13.3em;opacity: 0.5">
+            <div id="musicProgressBar" class="determinate grey darken-1" style="width: 70%;opacity: 0.8"></div>
+        </div>
+    </div>
+    <!--音乐播放列表-->
+    <div id="musicList" class="container card " style="background-color: beige;top: -14em;
+    left: 14em;height: 14em;width: max-content;overflow: hidden;margin: 0;overflow-y: auto;overflow-x: auto">
+        <table class="centered striped ">
+            <thead>
+            <tr>
+                <th>候选列表</th>
+            </tr>
+            </thead>
+            <tbody id="tableBody" draggable="true">
+            <!--            <tr><td>Alvin</td></tr>-->
+            <!--            <tr><td>Alan</td></tr>-->
+            <!--            <tr><td>Jonathan</td></tr>-->
+            <!--            <tr><td>Alvin</td></tr>-->
+            <!--            <tr><td>Alan</td></tr>-->
+            </tbody>
+        </table>
+    </div>
+    <!--    显示音乐播放器-->
+    <a id="musicPlayerShow" onclick="clickToShowMusicPlayer()" class="fa fa-chevron-right" aria-hidden="true" style="
+    cursor:pointer;visibility: hidden;color: black;position: absolute;font-size: 1.5em;top: 0.88em;left: 9.5em;"></a>
+</div>
+
+<script>
+
+
+    //动态设置音乐播放器的尺寸
+    //音乐播放器总尺寸
+    let musicPlayerSelf = document.getElementById('musicPlayerSelf');
+    let musicPlayerSelfHeightAndWidth = 14
+    let iconFontSize = 1.5
+
+    if (musicPlayerSelfHeightAndWidth < 14) {
+        iconFontSize = 0.5
+    }
+    //以下是相关属性的设置
+    musicPlayerSelf.style.height = musicPlayerSelfHeightAndWidth + 'em';
+    musicPlayerSelf.style.width = musicPlayerSelfHeightAndWidth + 'em';
+    // 播放按钮位置及尺寸
+    let musicPlayOrPause = document.getElementById('musicPlayOrPause');
+    musicPlayOrPause.style.left = musicPlayerSelfHeightAndWidth / 2 / iconFontSize + 'em'
+    musicPlayOrPause.style.top = musicPlayerSelfHeightAndWidth / 2 / iconFontSize + 'em'
+    musicPlayOrPause.style.fontSize = iconFontSize + 'em';
+    //上一首，
+    let musicPreIcon = document.getElementById('musicPre');
+    musicPreIcon.style.left = musicPlayerSelfHeightAndWidth * 0.054 / iconFontSize + 'em'
+    musicPreIcon.style.top = musicPlayerSelfHeightAndWidth / 2 / iconFontSize + 'em'
+    musicPreIcon.style.fontSize = iconFontSize + 'em';
+    //下一首
+    let musicNextIcon = document.getElementById('musicNext');
+    musicNextIcon.style.left = musicPlayerSelfHeightAndWidth * 0.88 / iconFontSize + 'em'
+    musicNextIcon.style.top = musicPlayerSelfHeightAndWidth / 2 / iconFontSize + 'em'
+    musicNextIcon.style.fontSize = iconFontSize + 'em';
+
+    //隐藏播放器
+    let musicHideIcon = document.getElementById('musicHide');
+    musicHideIcon.style.left = musicPlayerSelfHeightAndWidth * 0.88 / iconFontSize + 'em'
+    musicHideIcon.style.top = musicPlayerSelfHeightAndWidth * 0.054 / iconFontSize + 'em'
+    musicHideIcon.style.fontSize = iconFontSize + 'em';
+
+    //循环播放
+    let musicLoopOrListLoopIcon = document.getElementById('musicLoopOrListLoop');
+    musicLoopOrListLoopIcon.style.left = musicPlayerSelfHeightAndWidth * 0.054 / iconFontSize + 'em'
+    musicLoopOrListLoopIcon.style.top = musicPlayerSelfHeightAndWidth * 0.054 / iconFontSize + 'em'
+    musicLoopOrListLoopIcon.style.fontSize = iconFontSize + 'em';
+
+    //歌曲名等
+    //歌曲名
+    let musicNameContainer = document.getElementById('musicNameContainer');
+    musicNameContainer.style.width = musicPlayerSelfHeightAndWidth / 3 * 2 + 'em'
+    musicNameContainer.style.top = musicPlayerSelfHeightAndWidth / 1.65 + 'em'
+    musicNameContainer.style.left = musicPlayerSelfHeightAndWidth / 5 + 'em'
+    // musicNameContainer.style.fontSize = iconFontSize + 'em';
+
+
+    let musicNameContent = document.getElementById('musicName');
+    musicNameContent.style.fontSize = iconFontSize + 'em'
+
+    //作者名
+    let musicAuthorContainer = document.getElementById('musicAuthorContainer');
+    musicAuthorContainer.style.left = musicPlayerSelfHeightAndWidth / 5 + 'em'
+    musicAuthorContainer.style.top = musicPlayerSelfHeightAndWidth / 1.4 + 'em'
+    musicAuthorContainer.style.width = musicPlayerSelfHeightAndWidth / 3 * 2 + 'em'
+    let musicAuthorContent = document.getElementById('musicAuthor');
+    musicAuthorContent.style.fontSize = iconFontSize / 1.5 + 'em'
+    //歌曲描述
+    let musicDescriptionContainer = document.getElementById('musicDescriptionContainer');
+    musicDescriptionContainer.style.left = musicPlayerSelfHeightAndWidth / 4 + 'em'
+    musicDescriptionContainer.style.top = musicPlayerSelfHeightAndWidth / 1.273 + 'em'
+    musicDescriptionContainer.style.width = musicPlayerSelfHeightAndWidth / 2 + 'em'
+
+    let musicDescriptionContent = document.getElementById('musicDescription');
+    musicDescriptionContent.style.fontSize = iconFontSize / 1.5 + 'em'
+
+    //歌曲声音容器
+    let musicVoiceContainer = document.getElementById('musicVoiceContainer');
+    if (musicPlayerSelfHeightAndWidth < 14) {
+
+        musicVoiceContainer.style.left = musicPlayerSelfHeightAndWidth * 0.054 + 'em'
+        musicVoiceContainer.style.top = musicPlayerSelfHeightAndWidth * 0.87 + 'em'
+    }
+    //歌曲音量图标
+    let musicVoiceIcon = document.getElementById('musicVoiceIcon');
+    musicVoiceIcon.style.fontSize = iconFontSize + 'em'
+    // ;height: 1.8em; border-radius: 15px; width: 10em;
+    // let voiceBarBack = document.getElementById('voiceBarBack');
+    if (musicPlayerSelfHeightAndWidth < 14) {
+        //白色背景设置
+        voiceBarBack.style.height = musicPlayerSelfHeightAndWidth * 0.08 + 'em'
+        voiceBarBack.style.width = musicPlayerSelfHeightAndWidth * 0.72 + 'em'
+    }
+
+    //                <div id="progressBar" class="center" style="position: absolute;height: 7px;width: 7em;top: 0.7em;left: 2em;"></div>
+    //拖动条设置
+    if (musicPlayerSelfHeightAndWidth < 14) {
+        let musicBarSetting = document.getElementById('progressBar');
+        musicBarSetting.style.top = musicPlayerSelfHeightAndWidth * 0.02 + 'em'
+        musicBarSetting.style.width = musicPlayerSelfHeightAndWidth * 0.5 + 'em'
+        musicBarSetting.style.left = musicPlayerSelfHeightAndWidth * 0.1 + 'em'
+    }
+
+    //显示音乐列表按钮
+    let musicListShowIcon = document.getElementById('musicListShow');
+    musicListShowIcon.style.top = musicPlayerSelfHeightAndWidth * 0.88 / iconFontSize + 'em'
+    musicListShowIcon.style.left = musicPlayerSelfHeightAndWidth * 0.88 / iconFontSize + 'em'
+    musicListShowIcon.style.fontSize = iconFontSize + 'em';
+
+
+    let musicProgressBarContainer = document.getElementById('musicProgressBarContainer');
+    musicProgressBarContainer.style.top = musicPlayerSelfHeightAndWidth * 0.94 + 'em'
+    musicProgressBarContainer.style.height = musicPlayerSelfHeightAndWidth * 0.06 + 'em'
+
+    //音乐播放列表设置
+    let musicListContainer = document.getElementById('musicList');
+    musicListContainer.style.top = -musicPlayerSelfHeightAndWidth + 'em'
+    musicListContainer.style.height = musicPlayerSelfHeightAndWidth + 'em'
+    musicListContainer.style.left = musicPlayerSelfHeightAndWidth + 'em'
+
+
+    //音乐播放列表的显隐动画
+    let listShowOrHide = false;
+    anime({
+        targets: '#musicList',
+        translateX: '-55%',
+        translateY: '40%',
+        scale: 0,
+        rotate: '1turn'
+    });
+
+    function clickToShowOrHideMusicList() {
+        if (listShowOrHide) {
+            anime({
+                targets: '#musicList',
+                translateX: '-55%',
+                translateY: '40%',
+                scale: 0,
+                rotate: '1turn'
+            });
+            listShowOrHide = false;
+        } else {
+            anime({
+                targets: '#musicList',
+                translateX: '0',
+                translateY: '0',
+                scale: 1,
+                rotate: '1turn'
+            });
+            listShowOrHide = true;
+        }
+    }
+
+    window.onscroll = function () {
+        anime({
+            targets: '#musicList',
+            translateX: '-55%',
+            translateY: '40%',
+            scale: 0,
+            rotate: '1turn'
+        });
+        listShowOrHide = false;
+    }
+
+    //音乐播放器的显隐动画
+    let musicPlayerShow = document.getElementById('musicPlayerShow');
+
+    function clickToOffMusicPlayer() {
+        anime({
+            targets: '#musicPlayerSelf',
+            translateX: '-100%',
+            scale: 1,
+            rotate: '1turn'
+        });
+        anime({
+            targets: '#musicPlayerShow',
+            left: 0,
+            scale: 1,
+            rotate: '1turn'
+        });
+        anime({
+            targets: '#musicList',
+            translateX: '-150%',
+            translateY: '40%',
+            scale: 0,
+            rotate: '1turn'
+        });
+        musicPlayerShow.style.visibility = 'visible'
+    }
+
+    function clickToShowMusicPlayer() {
+        anime({
+            targets: '#musicPlayerSelf',
+            translateX: '0',
+            scale: 1,
+            rotate: '1turn'
+        });
+        anime({
+            targets: '#musicPlayerShow',
+            left: '9.5em',
+            scale: 1,
+            rotate: '1turn'
+        });
+        musicPlayerShow.style.visibility = 'hidden'
+    }
+</script>
+
+<script src="../static/music/lib/materialize/js/materialize.min.js" th:href="@{/music/lib/materialize/js/materialize.min.js}"></script>
+<script src="../static/music/lib/nouislider/nouislider.js" th:href="@{/music/music/lib/nouislider/nouislider.js}"></script>
+<script src="../static/music/lib/nouislider/wNumb.js" th:href="@{/music/lib/nouislider/wNumb.js}"></script>
+<script src="../static/music/js/axios.min.js" th:href="@{/music/js/axios.min.js}"></script>
+
+
+<script>
+    //定义一个全局数组来接受axios的数据
+    let listM = [];
+    //全局获取audio播放器元素
+    let elementAudio = document.getElementById('audioPlay');
+    //axios发送请求，得到音乐列表
+    axios({
+        method: 'get',
+        url: 'http://192.168.1.3:8585/music/list',
+        headers: {
+            'Content-Type': 'application/json',
+            // 'content-type': 'application/x-www-form-urlencoded'
+        }
+    })
+        .then(function (response) {
+            // console.log(response.data.list)
+            listM = response.data.data;
+            getMusicList();//axios请求完毕后,将得到的数据放入getMusicList中
+            loadMusicList();//取用数据，渲染dom
+        }).catch(error =>{
+        console.log(error.response)
+    });
+    //只有当axios加载成功后，才会执行所有后面的操作
+    function axiosLoadFinished() {
+
+    }
+
+    //单曲循环或列表循环
+    //首先定义一个List,用来获取音乐列表
+    function getMusicList() {
+        let strings = [{name: '前世有约', url: 'http://192.168.1.3:8585/music/audio/A2AQianShiYouYue.mp3'},
+            {name: '带我离开', url: 'http://192.168.1.3:8585/music/audio/By2DaiWoLiKai.mp3'}];
+        strings.push.apply(strings, listM)
+        // console.log(listM)
+        return strings;
+    }
+    //获取音乐列表并添加到表格中
+    function  loadMusicList() {
+        for (let i = 0; i < getMusicList().length; i++) {
+            //右侧入
+            let trr = document.createElement('tr'); //1、创建元素
+            let tdd = document.createElement('td');
+            tdd.id = 'tdd' + getMusicList()[i].name;
+            trr.id = 'trr' + getMusicList()[i].name;
+            tdd.textContent = getMusicList()[i].name;
+            trr.style.textAlignLast = 'center'
+            tdd.style.cursor = 'pointer'
+            tdd.style.width = '100%'
+            tdd.style.boxShadow = 'none'
+            tdd.onclick = function () {
+                listNameClick(this)
+            };
+            let container = document.getElementById('tableBody'); //2、找到父级元素
+            container.appendChild(trr); //3、在末尾中添加元素
+            trr.appendChild(tdd)
+        }
+    }
+    //音乐播放列表的点击事件，根据点击的选择播放哪一首歌
+    function listNameClick(result) {
+        for (let i = 0; i < getMusicList().length; i++) {
+            if (result.id === 'tdd' + getMusicList()[i].name) {
+                elementAudio.src = getMusicList()[i].url
+                getMusicInfo();
+                // result.className = "btn active pulse"
+            }
+
+        }
+        console.log(result.id)
+    }
+    //     audioTracks	返回表示可用音频轨道的 AudioTrackList 对象。
+    // autoplay	设置或返回是否在就绪（加载完成）后随即播放音频。
+    // buffered	返回表示音频已缓冲部分的 TimeRanges 对象。
+    // controller	返回表示音频当前媒体控制器的 MediaController 对象。
+    // controls	设置或返回音频是否应该显示控件（比如播放/暂停等）。
+    // crossOrigin	设置或返回音频的 CORS 设置。
+    // currentSrc	返回当前音频的 URL。
+    // currentTime	设置或返回音频中的当前播放位置（以秒计）。
+    // defaultMuted	设置或返回音频默认是否静音。
+    // defaultPlaybackRate	设置或返回音频的默认播放速度。
+    // duration	返回音频的长度（以秒计）。
+    // ended	返回音频的播放是否已结束。
+    // error	返回表示音频错误状态的 MediaError 对象。
+    // loop	设置或返回音频是否应在结束时再次播放。
+    // mediaGroup	设置或返回音频所属媒介组合的名称。
+    // muted	设置或返回是否关闭声音。
+    // networkState	返回音频的当前网络状态。
+    // paused	设置或返回音频是否暂停。
+    // playbackRate	设置或返回音频播放的速度。
+    // played	返回表示音频已播放部分的 TimeRanges 对象。
+    // preload	设置或返回音频的 preload 属性的值。
+    // readyState	返回音频当前的就绪状态。
+    // seekable	返回表示音频可寻址部分的 TimeRanges 对象。
+    // seeking	返回用户当前是否正在音频中进行查找。
+    // src	设置或返回音频的 src 属性的值。
+    // textTracks	返回表示可用文本轨道的 TextTrackList 对象。
+    // volume	设置或返回音频的音量。
+
+    // addTextTrack()	向音频添加新的文本轨道。
+    // canPlayType()	检查浏览器是否能够播放指定的音频类型。
+    // fastSeek()	在音频播放器中指定播放时间。
+    // getStartDate()	返回新的 Date 对象，表示当前时间线偏移量。
+    // load()	重新加载音频元素。
+    // play()	开始播放音频。
+    // pause()	暂停当前播放的音频。
+
+
+    // 注意创建元素后，还要将元素附加到其他元素上，也就是实例化，否则其他方法无法获取元素的属性并进行操作，因为对他们而言，元素是不可见的
+    // function clickAudio(){
+    //     let htmlAudioElement = document.createElement('audio');
+    //     htmlAudioElement.setAttribute('id','second');
+    //     let attribute = htmlAudioElement.getAttribute('id');
+    //     console.log(attribute);
+    //     htmlAudioElement.src = '../static/audio/By2%20-%20带我离开.mp3';
+    //     htmlAudioElement.controls = 'controls';
+    //     document.getElementById('appendd').appendChild(htmlAudioElement)
+    //     htmlAudioElement.play();
+    // }
+    // window.addEventListener("click", function () {
+    //     let elementById1 = document.getElementById('second');
+    //     console.log(elementById1.volume + '');
+    // })
+    //设置音乐是否循环播放
+
+    //设置音乐播放或暂停
+    function musicPlay() {
+        console.log(getMusicList())
+        let musicPlayOrPauseBtn = document.getElementById('musicPlayOrPause');
+        if (elementAudio.paused === true) {
+            elementAudio.play()
+            musicPlayOrPauseBtn.className = 'fa fa-pause';
+        } else {
+            elementAudio.pause()
+            musicPlayOrPauseBtn.className = 'fa fa-play';
+        }
+        getMusicInfo()
+    }
+    //设置静音，点击音量图标会直接静音
+    function musicVoice() {
+        let musicVoiceIcon = document.getElementById('musicVoiceIcon');
+        musicVoiceIcon.className = 'fa fa-volume-off'
+        elementAudio.volume = 0
+        //把音量的拖动条置零
+        resultElement.noUiSlider.set(0)
+    }
+    //设置音量条显隐，鼠标悬浮时显示音量条
+    let voiceBarBack = document.getElementById('voiceBarBack');
+    function iconHover() {
+        voiceBarBack.style.visibility = 'visible';
+    }
+    function iconOut() {
+        voiceBarBack.style.visibility = 'hidden';
+    }
+    //设置拖动音量条，通过拖动音量条来改变声音大小
+    var resultElement = document.getElementById('progressBar');
+    noUiSlider.create(resultElement, {
+        start: 100,
+        connect: [true, false],
+        orientation: "horizontal",
+        // direction: 'rtl',
+        range: {
+            'min': 0,
+            'max': 100
+        },
+        format: wNumb({
+            decimals: 0
+        })
+    });
+    //回调，根据音量拉动条拉设置实际的音量，同时改变音量图标
+    resultElement.noUiSlider.on('update', function () {
+        let sliderVolume = resultElement.noUiSlider.get();
+        elementAudio.volume = sliderVolume / 100;
+        let volume = elementAudio.volume;
+
+        let musicVoiceIcon = document.getElementById('musicVoiceIcon');
+        if (volume > 0.5) {
+            musicVoiceIcon.className = 'fa fa-volume-up'
+        }
+        if (volume <= 0.5 && volume > 0) {
+            musicVoiceIcon.className = 'fa fa-volume-down'
+        }
+        if (elementAudio.defaultMuted || elementAudio.volume === 0) {
+            musicVoiceIcon.className = 'fa fa-volume-off'
+        }
+        // console.log(elementAudio.volume)
+        // console.log(elementAudio.defaultMuted)
+    });
+
+    //定义实际过程中歌曲的循环
+    let musicNum = 0;
+    elementAudio.src = getMusicList()[musicNum].url;
+    let musicProgressBar = document.getElementById('musicProgressBar');
+    //改变音乐进度条
+    setInterval('changeMusicProgressBar()',1000)
+    function changeMusicProgressBar(){
+        // musicProgressBar.style.width = '0%';
+        let width = elementAudio.currentTime / elementAudio.duration * 100;
+        musicProgressBar.style.width = width + '%';
+        console.log(width)
+    }
+    //播放下一首音乐
+    function musicNext() {
+        musicNum++;
+        if (musicNum >= getMusicList().length) {
+            musicNum = 0;
+        }
+        elementAudio.src = getMusicList()[musicNum].url
+        console.log('下一首')
+        getMusicInfo()
+        //如果第一个点击事件就是下一首，那么播放图标不会改变，但实际上下一首已经播放了，所以要设置这里改为播放的图标，下一个同理
+        let musicPlayOrPauseBtn = document.getElementById('musicPlayOrPause');
+        musicPlayOrPauseBtn.className = 'fa fa-pause';
+    }
+    //播放上一首音乐
+    function musicPre() {
+        musicNum--;
+        if (musicNum < 0) {
+            musicNum = getMusicList().length - 1;
+        }
+        elementAudio.src = getMusicList()[musicNum].url
+        getMusicInfo()
+        let musicPlayOrPauseBtn = document.getElementById('musicPlayOrPause');
+        musicPlayOrPauseBtn.className = 'fa fa-pause';
+    }
+    //设置音乐的时间比
+    // setInterval('intervalAudio()', 1000)
+    elementAudio.addEventListener('pause',function () {
+    });
+    //根据歌曲改变歌曲候选列表的选中状态
+    function changeListChooseState(){
+        let musicPlayOrPauseBtn = document.getElementById('musicPlayOrPause');
+        musicPlayOrPauseBtn.className = 'fa fa-pause';
+        for (let i = 0; i < getMusicList().length; i++) {
+            let elmName = document.getElementById('tdd' + getMusicList()[i].name);
+            if ('tdd' + document.getElementById('musicName').textContent === elmName.id) {
+                elmName.className = "btn  active"
+            } else {
+                elmName.className = ""
+                // elmName.style.cursor = 'pointer';
+                // elmName.style.textAlignLast = 'center';
+            }
+        }
+    }
+    let singleNotList = false;
+    //开始定义图标的变化
+    function musicSingleOrListLoop() {
+        let elMusicLoopOrListLoop = document.getElementById('musicLoopOrListLoop');
+        if (!singleNotList) {
+            // console.log('列表循环');
+            singleNotList = true;
+            elementAudio.loop = false
+            elMusicLoopOrListLoop.className = 'fa fa-arrows-h'
+
+        } else if (singleNotList) {
+            // console.log('单曲循环');
+            singleNotList = false;
+            elementAudio.loop = true;
+            elMusicLoopOrListLoop.className = 'fa fa-long-arrow-right';
+        }
+    }
+    //判断是否循环播放，当上一首播放完后，根据选择，判断是否自动播放下一曲
+    elementAudio.addEventListener('ended',function () {
+        let number=0;
+        // console.log(width)
+        // console.log( musicProgressBar.style.width)
+        // console.log(elementAudio.ended)
+        if (singleNotList && elementAudio.ended) {
+            // console.log('这是列表循环')
+            for (let i = 0;i<getMusicList().length;i++){
+                if (elementAudio.currentSrc === getMusicList()[i].url) {
+                    number = i;
+                }
+            }
+            // console.log(number)
+            // console.log(getMusicList().length)
+            if (number >= getMusicList().length - 1) {
+                number = 0;
+                musicNum = number;
+                elementAudio.src = getMusicList()[musicNum].url;
+                // console.log('超了');
+            } else {
+                musicNum = number + 1;
+                elementAudio.src = getMusicList()[musicNum].url;
+                // console.log('没超');
+            }
+        }
+        if (!singleNotList && elementAudio.ended) {
+            elementAudio.play()
+            // console.log('这是单曲循环')
+        }
+        getMusicInfo();
+    })
+
+    //针对chrome浏览器等，这样只样有点击事件便会触发音乐播放
+    let n = 1;
+    window.addEventListener('click', function () {
+        n = n + 1;
+        if (n === 2) {
+            console.log('开始播放了')
+            let musicPlayOrPauseBtn = document.getElementById('musicPlayOrPause');
+            musicPlayOrPauseBtn.className = 'fa fa-pause';
+            elementAudio.play();
+            getMusicInfo()
+        }
+        // Simple API - will fetch all tags
+    });
+    elementAudio.addEventListener('canplaythrough',function () {
+        console.log("可以播放了")
+        getMusicInfo()
+    })
+    // setInterval('getMusicInfo()',2000);
+    // getMusicInfo()
+    //注意这里，之所以独立出来，是因为事件的先后执行顺序,注意这里，使用了延迟函数，是因为设置
+    //了图片的src后，文件读取需要一定的事件，如果点击后接着执行，比如刚刚进入网页便点击下一首
+    //这时候其实文件读取的是上一首的信息，这样总会慢一首
+    function getMusicInfo() {
+        setTimeout(function () {
+            // let currentSrc = elementAudio.currentSrc; //currentSrc	返回当前音频的 URL
+            let currentSrc = elementAudio.currentSrc;
+            const jsmediatags = window.jsmediatags;
+            jsmediatags.read(currentSrc, {
+                onSuccess: function (tag) {
+                    //注意，这里很有可能会出现乱码，也就是GBK，如果出现乱码，代表音轨号没有指定，可以用MP3tag修改音轨号为1
+                    console.log('是否读取了歌曲信息')
+                    document.getElementById('musicAuthor').textContent = tag.tags.artist
+                    console.log(tag.tags.artist)
+                    document.getElementById('musicDescription').textContent = tag.tags.album
+                    document.getElementById('musicName').textContent = tag.tags.title
+                    // document.getElementById('musicLyrics').textContent = tag.tags.title
+                    console.log(tag.tags.picture);
+                    if (tag.tags.picture) {
+                        //获取image对象并转为base64
+                        let imageData = tag.tags.picture.data;
+                        let base64String = "";
+                        for (let i = 0; i < imageData.length; i++) {
+                            base64String += String.fromCharCode(imageData[i]);
+                        }
+                        console.log("data:" + tag.tags.picture.format + ";base64," + window.btoa(base64String))
+                        document.getElementById('playerImg').src = "data:" + tag.tags.picture.format + ";base64," + window.btoa(base64String);
+                    }else {
+                        document.getElementById('playerImg').src ='/music/lib/loop/img/sample-03.jpg';
+                    }
+                    // let url =window.URL.createObjectURL(new Blob([elementById.src], {type:"image/jpeg"}));
+                    // console.log(url);
+                    // console.log(elementById.src)
+                    //读取信息完毕后才改变选中状态
+                    changeListChooseState();
+                },
+                onError: function (error) {
+                    console.log('出错了')
+                    console.log(':(', error.type, error.info);
+                }
+            });
+        }, 1000);
+    }
+    jsmediatags.Config.setXhrTimeoutInSec(40);
+</script>
+</body>
+</html>

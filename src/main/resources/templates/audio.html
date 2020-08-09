@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>audio</title>
+</head>
+<body>
+<audio id="music" src="../static/music/audio/A2AQianShiYouYue.mp3" controls="controls"></audio>
+</body>
+
+<script>
+    console.log("正在加载")
+    document.getElementById('music').addEventListener('pause',function () {
+        console.log("可以播放了")
+    })
+</script>
+</html>
